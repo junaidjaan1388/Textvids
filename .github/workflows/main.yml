@@ -1,343 +1,157 @@
-name: Deploy WanT2V to Vercel
+name: WanT2V Video Generation
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
-
-env:
-  PYTHON_VERSION: '3.10'
-  NODE_VERSION: '18'
+    inputs:
+      prompt:
+        description: 'Text prompt for video generation'
+        required: true
+        default: 'A beautiful sunset over mountains'
+      width:
+        description: 'Video width'
+        required: true
+        default: 1280
+      height:
+        description: 'Video height'
+        required: true
+        default: 720
+      frames:
+        description: 'Number of frames'
+        required: true
+        default: 81
+      seed:
+        description: 'Random seed (-1 for random)'
+        required: true
+        default: -1
 
 jobs:
-  deploy:
+  generate-video:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    container:
+      image: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-devel
+      options: --gpus all
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Install system dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg libsm6 libxext6
-
-    - name: Cache Python packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        apt-get update
+        apt-get install -y git libgl1-mesa-glx libglib2.0-0
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
         pip install tqdm transformers accelerate
+        pip install git+https://github.com/huggingface/diffusers.git
 
-    - name: Setup Node.js for Vercel
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Install Vercel CLI
-      run: npm install -g vercel
-
-    - name: Create Vercel configuration
+    - name: Create model directory structure
       run: |
-        cat > vercel.json << 'EOF'
-        {
-          "version": 2,
-          "builds": [
-            {
-              "src": "**/*.py",
-              "use": "@vercel/python"
-            },
-            {
-              "src": "**/*.html",
-              "use": "@vercel/static"
-            },
-            {
-              "src": "**/*.js",
-              "use": "@vercel/static"
-            },
-            {
-              "src": "**/*.css",
-              "use": "@vercel/static"
-            }
-          ],
-          "routes": [
-            {
-              "src": "/(.*)",
-              "dest": "/index.html"
-            }
-          ],
-          "env": {
-            "PYTHONPATH": "/var/task"
-          }
-        }
-        EOF
+        mkdir -p checkpoints/models
+        # Note: You'll need to add your actual model checkpoints here
+        # This is just the directory structure
+        echo "Model directory created - add your checkpoints manually"
 
-    - name: Create API endpoint for Vercel
+    - name: Create test script
       run: |
-        mkdir -p api
-        cat > api/generate.py << 'EOF'
-        from http.server import BaseHTTPRequestHandler
-        import json
-        import sys
+        cat > test_generation.py << 'EOF'
+        import torch
         import os
-        
-        # Add the project root to Python path
-        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-        
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self):
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                response = {
-                    "status": "success",
-                    "message": "WanT2V API is running",
-                    "endpoints": {
-                        "POST /api/generate": "Generate video from text"
-                    }
-                }
-                self.wfile.write(json.dumps(response).encode('utf-8'))
+        from your_module import WanT2V  # Adjust import path as needed
+        from your_module.config import get_config  # Adjust import path as needed
+
+        def main():
+            # Initialize configuration
+            config = get_config()  # You'll need to implement this based on your config structure
             
-            def do_POST(self):
-                if self.path == '/api/generate':
-                    self.handle_generate()
-                else:
-                    self.send_error(404)
+            # Set up checkpoint directory
+            checkpoint_dir = "checkpoints"
             
-            def handle_generate(self):
-                try:
-                    content_length = int(self.headers['Content-Length'])
-                    post_data = self.rfile.read(content_length)
-                    request_data = json.loads(post_data.decode('utf-8'))
-                    
-                    # Import and use your WanT2V class here
-                    from want2v import WanT2V
-                    import torch
-                    
-                    # Initialize model (you'll need to adjust paths)
-                    config = types.SimpleNamespace(
-                        num_train_timesteps=1000,
-                        param_dtype=torch.float32,
-                        text_len=120,
-                        t5_dtype=torch.float32,
-                        t5_checkpoint="t5-base",
-                        t5_tokenizer="t5-base",
-                        vae_stride=(1, 8, 8),
-                        patch_size=(2, 2, 2),
-                        vae_checkpoint="vae_model.pth",
-                        sample_neg_prompt=""
+            # Get workflow inputs
+            prompt = "${{ github.event.inputs.prompt }}"
+            width = int("${{ github.event.inputs.width }}")
+            height = int("${{ github.event.inputs.height }}")
+            frames = int("${{ github.event.inputs.frames }}")
+            seed = int("${{ github.event.inputs.seed }}")
+            
+            print(f"Generating video with prompt: {prompt}")
+            print(f"Resolution: {width}x{height}, Frames: {frames}, Seed: {seed}")
+            
+            try:
+                # Initialize model
+                model = WanT2V(
+                    config=config,
+                    checkpoint_dir=checkpoint_dir,
+                    device_id=0,
+                    rank=0,
+                    t5_fsdp=False,
+                    dit_fsdp=False,
+                    use_usp=False,
+                    t5_cpu=False
+                )
+                
+                # Generate video
+                with torch.no_grad():
+                    video = model.generate(
+                        input_prompt=prompt,
+                        size=(width, height),
+                        frame_num=frames,
+                        shift=5.0,
+                        sample_solver='unipc',
+                        sampling_steps=20,  # Reduced for faster testing
+                        guide_scale=5.0,
+                        n_prompt="",
+                        seed=seed,
+                        offload_model=True
                     )
+                
+                if video is not None:
+                    # Save video as individual frames
+                    os.makedirs("output_frames", exist_ok=True)
+                    for i in range(video.shape[1]):
+                        frame = video[:, i]  # Get individual frame
+                        # You'll need to implement frame saving logic here
+                        # torchvision.utils.save_frame or similar
                     
-                    # Generate video
-                    generator = WanT2V(config, "./checkpoints")
-                    input_prompt = request_data.get('prompt', 'A cat walking')
-                    frame_num = request_data.get('frame_num', 81)
-                    size = request_data.get('size', (1280, 720))
+                    print("Video generation completed successfully!")
+                    print(f"Output shape: {video.shape}")
+                else:
+                    print("Video generation failed - no output")
                     
-                    with torch.no_grad():
-                        video = generator.generate(
-                            input_prompt=input_prompt,
-                            size=size,
-                            frame_num=frame_num,
-                            sampling_steps=request_data.get('sampling_steps', 20)
-                        )
-                    
-                    # Convert video to base64 or save to temporary file
-                    response = {
-                        "status": "success",
-                        "message": "Video generated successfully",
-                        "video_shape": video.shape if video is not None else None
-                    }
-                    
-                    self.send_response(200)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps(response).encode('utf-8'))
-                    
-                except Exception as e:
-                    self.send_response(500)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    error_response = {
-                        "status": "error",
-                        "message": str(e)
-                    }
-                    self.wfile.write(json.dumps(error_response).encode('utf-8'))
-        
-        def handler(request, context):
-            return Handler()
+            except Exception as e:
+                print(f"Error during video generation: {e}")
+                raise
+
+        if __name__ == "__main__":
+            main()
         EOF
 
-    - name: Create requirements.txt if missing
+    - name: Run video generation
       run: |
-        if [ ! -f requirements.txt ]; then
-          cat > requirements.txt << 'EOF'
-          torch>=2.0.0
-          torchvision>=0.15.0
-          tqdm>=4.64.0
-          transformers>=4.30.0
-          accelerate>=0.20.0
-          EOF
-        fi
+        python test_generation.py
 
-    - name: Create basic web interface
-      run: |
-        cat > index.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>WanT2V Video Generator</title>
-            <style>
-                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                .form-group { margin-bottom: 15px; }
-                label { display: block; margin-bottom: 5px; font-weight: bold; }
-                input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-                button { background: #0070f3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                button:hover { background: #0051bb; }
-                .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
-                .success { background: #d4edda; border: 1px solid #c3e6cb; }
-                .error { background: #f8d7da; border: 1px solid #f5c6cb; }
-            </style>
-        </head>
-        <body>
-            <h1>WanT2V Text-to-Video Generator</h1>
-            <form id="generateForm">
-                <div class="form-group">
-                    <label for="prompt">Text Prompt:</label>
-                    <textarea id="prompt" rows="3" placeholder="Enter your text prompt here...">A cat walking in the park</textarea>
-                </div>
-                <div class="form-group">
-                    <label for="frame_num">Number of Frames:</label>
-                    <input type="number" id="frame_num" value="81" min="1" max="200">
-                </div>
-                <div class="form-group">
-                    <label for="sampling_steps">Sampling Steps:</label>
-                    <input type="number" id="sampling_steps" value="20" min="1" max="100">
-                </div>
-                <button type="submit">Generate Video</button>
-            </form>
-            <div id="result" class="result" style="display: none;"></div>
-            
-            <script>
-                document.getElementById('generateForm').addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    const formData = {
-                        prompt: document.getElementById('prompt').value,
-                        frame_num: parseInt(document.getElementById('frame_num').value),
-                        sampling_steps: parseInt(document.getElementById('sampling_steps').value),
-                        size: [1280, 720]
-                    };
-                    
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.style.display = 'block';
-                    resultDiv.innerHTML = '<p>Generating video... This may take a while.</p>';
-                    
-                    try {
-                        const response = await fetch('/api/generate', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(formData)
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.status === 'success') {
-                            resultDiv.className = 'result success';
-                            resultDiv.innerHTML = `
-                                <h3>Video Generated Successfully!</h3>
-                                <p>Video shape: ${data.video_shape}</p>
-                                <p>Prompt: ${formData.prompt}</p>
-                            `;
-                        } else {
-                            resultDiv.className = 'result error';
-                            resultDiv.innerHTML = `<h3>Error:</h3><p>${data.message}</p>`;
-                        }
-                    } catch (error) {
-                        resultDiv.className = 'result error';
-                        resultDiv.innerHTML = `<h3>Error:</h3><p>${error.message}</p>`;
-                    }
-                });
-            </script>
-        </body>
-        </html>
-        EOF
-
-    - name: Deploy to Vercel
-      run: |
-        if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
-          vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --confirm
-        else
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --confirm
-        fi
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-    - name: Run basic tests
-      run: |
-        python -c "
-        # Basic import test
-        try:
-            import torch
-            import tqdm
-            print('✓ All imports successful')
-        except ImportError as e:
-            print(f'✗ Import error: {e}')
-            exit(1)
-        "
-
-  test:
-    runs-on: ubuntu-latest
-    needs: deploy
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - name: Upload generated frames
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        name: generated-frames
+        path: output_frames/
+        retention-days: 1
 
-    - name: Test Python imports
-      run: |
-        python -c "
-        import sys
-        sys.path.append('.')
-        try:
-            # Test basic structure
-            from modules.model import WanModel
-            from modules.t5 import T5EncoderModel
-            from modules.vae import WanVAE
-            print('✓ All module imports successful')
-        except Exception as e:
-            print(f'Note: Some imports failed (expected for CI): {e}')
-        "
+    - name: Upload logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: generation-logs
+        path: |
+          *.log
+        retention-days: 7
 
-    - name: Verify file structure
+  setup-notification:
+    runs-on: ubuntu-latest
+    needs: generate-video
+    steps:
+    - name: Notify completion
       run: |
-        echo "Project structure:"
-        find . -name "*.py" -type f | head -10
-        echo "✓ File structure verified"
+        echo "Video generation job completed with status: ${{ needs.generate-video.result }}"

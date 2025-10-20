@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Media Generator with Groq</title>
+    <style>
+        :root {
+            --primary-color: #4a6cf7;
+            --secondary-color: #6a7efc;
+            --dark-color: #1e2a4a;
+            --light-color: #f8f9fa;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            color: var(--dark-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-full {
+            width: 100%;
+        }
+        
+        .api-key-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .api-key-container input {
+            flex: 1;
+        }
+        
+        .results-container {
+            margin-top: 30px;
+        }
+        
+        .result-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background: white;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .result-item img, .result-item video {
+            max-width: 100%;
+            border-radius: var(--border-radius);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #ffe6e6;
+            color: var(--danger-color);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #e6ffe6;
+            color: var(--success-color);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .history-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Media Generator</h1>
+            <p class="subtitle">Create images and videos from text descriptions using Groq API</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <div class="card">
+                    <h2>API Configuration</h2>
+                    <div class="form-group">
+                        <label for="api-key">Groq API Key</label>
+                        <div class="api-key-container">
+                            <input type="password" id="api-key" placeholder="Enter your Groq API key">
+                            <button id="toggle-key" class="btn">Show</button>
+                        </div>
+                        <p style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                            Get your API key from <a href="https://groq.com" target="_blank">groq.com</a>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>Generate Media</h2>
+                    <div class="form-group">
+                        <label for="media-type">Media Type</label>
+                        <select id="media-type">
+                            <option value="image">Image</option>
+                            <option value="video">Video</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="prompt">Prompt</label>
+                        <textarea id="prompt" placeholder="Describe what you want to generate..."></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="image-options">
+                        <label for="image-style">Image Style</label>
+                        <select id="image-style">
+                            <option value="realistic">Realistic</option>
+                            <option value="artistic">Artistic</option>
+                            <option value="cartoon">Cartoon</option>
+                            <option value="abstract">Abstract</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="video-options" style="display: none;">
+                        <label for="video-duration">Video Duration (seconds)</label>
+                        <input type="number" id="video-duration" min="1" max="30" value="5">
+                    </div>
+                    
+                    <button id="generate-btn" class="btn btn-full">Generate Media</button>
+                    
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Generating your media... This may take a moment.</p>
+                    </div>
+                    
+                    <div class="error-message" id="error-message"></div>
+                    <div class="success-message" id="success-message"></div>
+                </div>
+                
+                <div class="card">
+                    <h2>Generation History</h2>
+                    <div id="history-list">
+                        <p style="text-align: center; color: #999; padding: 20px;">No generation history yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <div class="card">
+                    <h2>Generated Results</h2>
+                    <div id="results-container" class="results-container">
+                        <p style="text-align: center; color: #999; padding: 40px;">
+                            Your generated media will appear here
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>AI Media Generator &copy; 2023 | Powered by Groq API</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const apiKeyInput = document.getElementById('api-key');
+        const toggleKeyBtn = document.getElementById('toggle-key');
+        const mediaTypeSelect = document.getElementById('media-type');
+        const promptInput = document.getElementById('prompt');
+        const imageOptions = document.getElementById('image-options');
+        const videoOptions = document.getElementById('video-options');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingElement = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const resultsContainer = document.getElementById('results-container');
+        const historyList = document.getElementById('history-list');
+        
+        // Toggle API key visibility
+        toggleKeyBtn.addEventListener('click', function() {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleKeyBtn.textContent = 'Hide';
+            } else {
+                apiKeyInput.type = 'password';
+                toggleKeyBtn.textContent = 'Show';
+            }
+        });
+        
+        // Show/hide options based on media type
+        mediaTypeSelect.addEventListener('change', function() {
+            if (this.value === 'image') {
+                imageOptions.style.display = 'block';
+                videoOptions.style.display = 'none';
+            } else {
+                imageOptions.style.display = 'none';
+                videoOptions.style.display = 'block';
+            }
+        });
+        
+        // Generate media function
+        generateBtn.addEventListener('click', async function() {
+            const apiKey = apiKeyInput.value.trim();
+            const prompt = promptInput.value.trim();
+            const mediaType = mediaTypeSelect.value;
+            
+            // Validation
+            if (!apiKey) {
+                showError('Please enter your Groq API key');
+                return;
+            }
+            
+            if (!prompt) {
+                showError('Please enter a prompt');
+                return;
+            }
+            
+            // Show loading state
+            loadingElement.style.display = 'block';
+            generateBtn.disabled = true;
+            hideMessages();
+            
+            try {
+                // In a real implementation, you would make API calls to Groq here
+                // For demonstration, we'll simulate API calls with timeouts
+                
+                if (mediaType === 'image') {
+                    // Simulate image generation
+                    await simulateImageGeneration(prompt);
+                } else {
+                    // Simulate video generation
+                    await simulateVideoGeneration(prompt);
+                }
+                
+                // Add to history
+                addToHistory(prompt, mediaType);
+                
+            } catch (error) {
+                showError('Failed to generate media: ' + error.message);
+            } finally {
+                loadingElement.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        });
+        
+        // Simulate image generation (replace with actual Groq API call)
+        function simulateImageGeneration(prompt) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // In a real implementation, you would use the Groq API
+                    // For demo purposes, we'll create a placeholder image
+                    const imageUrl = `https://picsum.photos/512/512?random=${Date.now()}`;
+                    
+                    // Display the result
+                    displayImageResult(prompt, imageUrl);
+                    showSuccess('Image generated successfully!');
+                    resolve();
+                }, 3000);
+            });
+        }
+        
+        // Simulate video generation (replace with actual Groq API call)
+        function simulateVideoGeneration(prompt) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // In a real implementation, you would use the Groq API
+                    // For demo purposes, we'll create a placeholder video
+                    const videoUrl = `https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4`;
+                    
+                    // Display the result
+                    displayVideoResult(prompt, videoUrl);
+                    showSuccess('Video generated successfully!');
+                    resolve();
+                }, 5000);
+            });
+        }
+        
+        // Display image result
+        function displayImageResult(prompt, imageUrl) {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.innerHTML = `
+                <h3>Generated Image</h3>
+                <p><strong>Prompt:</strong> ${prompt}</p>
+                <img src="${imageUrl}" alt="Generated image">
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="downloadMedia('${imageUrl}', 'image')">Download Image</button>
+                </div>
+            `;
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(resultItem);
+        }
+        
+        // Display video result
+        function displayVideoResult(prompt, videoUrl) {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.innerHTML = `
+                <h3>Generated Video</h3>
+                <p><strong>Prompt:</strong> ${prompt}</p>
+                <video controls>
+                    <source src="${videoUrl}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="downloadMedia('${videoUrl}', 'video')">Download Video</button>
+                </div>
+            `;
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(resultItem);
+        }
+        
+        // Add to history
+        function addToHistory(prompt, mediaType) {
+            // Create history item if it's the first one
+            if (historyList.querySelector('p')) {
+                historyList.innerHTML = '';
+            }
+            
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <p><strong>${mediaType === 'image' ? '🖼️' : '🎥'} ${mediaType.toUpperCase()}</strong></p>
+                <p>${prompt}</p>
+                <small>${new Date().toLocaleString()}</small>
+            `;
+            
+            // Add click event to reuse prompt
+            historyItem.addEventListener('click', function() {
+                promptInput.value = prompt;
+                mediaTypeSelect.value = mediaType;
+                mediaTypeSelect.dispatchEvent(new Event('change'));
+            });
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+        }
+        
+        // Download media function
+        function downloadMedia(url, type) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `generated-${type}-${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        // Utility functions
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+        
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+        
+        // Sample prompts for user convenience
+        const samplePrompts = [
+            "A serene mountain landscape at sunrise with a lake in the foreground",
+            "A futuristic city with flying cars and neon lights",
+            "A cute cartoon character exploring a magical forest",
+            "An abstract representation of artificial intelligence"
+        ];
+        
+        // Add a sample prompt on load for demonstration
+        window.addEventListener('load', function() {
+            promptInput.value = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
+        });
+    </script>
+</body>
+</html>

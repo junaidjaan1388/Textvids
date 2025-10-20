@@ -3,83 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Media Generator with Groq</title>
+    <title>Text to Media Generator</title>
     <style>
         :root {
-            --primary-color: #4a6cf7;
-            --secondary-color: #6a7efc;
-            --dark-color: #1e2a4a;
-            --light-color: #f8f9fa;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --radius: 12px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
         
         body {
-            background-color: #f0f2f5;
-            color: #333;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
         
         header {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
         }
         
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             margin-bottom: 10px;
         }
         
         .subtitle {
             font-size: 1.2rem;
-            opacity: 0.9;
+            color: var(--dark);
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
         }
         
-        .main-content {
+        .app-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
         }
         
-        @media (max-width: 768px) {
-            .main-content {
+        @media (max-width: 900px) {
+            .app-container {
                 grid-template-columns: 1fr;
             }
         }
         
         .card {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             padding: 25px;
-            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
         }
         
         .card h2 {
-            color: var(--dark-color);
-            margin-bottom: 15px;
+            color: var(--primary);
+            margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #f0f2f5;
+            border-bottom: 2px solid #f0f0f0;
         }
         
         .form-group {
@@ -90,21 +103,22 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--dark-color);
+            color: var(--dark);
         }
         
         input, textarea, select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
+            padding: 14px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--radius);
             font-size: 16px;
-            transition: border 0.3s;
+            transition: all 0.3s;
         }
         
         input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
         }
         
         textarea {
@@ -114,40 +128,70 @@
         
         .btn {
             display: inline-block;
-            background: var(--primary-color);
+            background: linear-gradient(to right, var(--primary), var(--secondary));
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: var(--border-radius);
+            padding: 14px 28px;
+            border-radius: var(--radius);
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
             text-align: center;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
         }
         
         .btn:hover {
-            background: var(--secondary-color);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .btn:disabled {
-            background: #ccc;
+            background: #adb5bd;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
         
         .btn-full {
             width: 100%;
         }
         
-        .api-key-container {
-            display: flex;
-            gap: 10px;
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
         }
         
-        .api-key-container input {
+        .media-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .media-option {
             flex: 1;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .media-option.active {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .media-option i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
         }
         
         .results-container {
@@ -155,32 +199,34 @@
         }
         
         .result-item {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: var(--radius);
             background: white;
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
         .result-item img, .result-item video {
             max-width: 100%;
-            border-radius: var(--border-radius);
+            border-radius: var(--radius);
+            display: block;
+            margin: 0 auto 15px;
         }
         
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
+            padding: 30px;
         }
         
         .spinner {
             border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
+            border-top: 5px solid var(--primary);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 20px;
         }
         
         @keyframes spin {
@@ -188,109 +234,159 @@
             100% { transform: rotate(360deg); }
         }
         
-        .error-message {
-            background: #ffe6e6;
-            color: var(--danger-color);
-            padding: 12px;
-            border-radius: var(--border-radius);
+        .message {
+            padding: 15px;
+            border-radius: var(--radius);
             margin-top: 15px;
             display: none;
         }
         
-        .success-message {
+        .error {
+            background: #ffe6e6;
+            color: #d00000;
+            border-left: 4px solid #d00000;
+        }
+        
+        .success {
             background: #e6ffe6;
-            color: var(--success-color);
-            padding: 12px;
-            border-radius: var(--border-radius);
-            margin-top: 15px;
-            display: none;
+            color: #008000;
+            border-left: 4px solid #008000;
         }
         
         .history-item {
-            padding: 10px;
+            padding: 15px;
             border-bottom: 1px solid #eee;
             cursor: pointer;
+            transition: background 0.2s;
         }
         
         .history-item:hover {
-            background: #f9f9f9;
+            background: #f8f9fa;
         }
         
         .history-item:last-child {
             border-bottom: none;
         }
         
+        .prompt-samples {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .sample-prompt {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: var(--radius);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .sample-prompt:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
         footer {
             text-align: center;
-            margin-top: 40px;
+            margin-top: 50px;
             padding: 20px;
-            color: #666;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 0.9rem;
+        }
+        
+        .media-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>AI Media Generator</h1>
-            <p class="subtitle">Create images and videos from text descriptions using Groq API</p>
+            <h1>Text to Media Generator</h1>
+            <p class="subtitle">Transform your ideas into stunning images and videos using AI-powered public APIs. No API key required!</p>
         </header>
         
-        <div class="main-content">
+        <div class="app-container">
             <div class="input-section">
                 <div class="card">
-                    <h2>API Configuration</h2>
-                    <div class="form-group">
-                        <label for="api-key">Groq API Key</label>
-                        <div class="api-key-container">
-                            <input type="password" id="api-key" placeholder="Enter your Groq API key">
-                            <button id="toggle-key" class="btn">Show</button>
+                    <h2>Create Media</h2>
+                    
+                    <div class="media-options">
+                        <div class="media-option active" data-type="image">
+                            <i>🖼️</i>
+                            <span>Generate Image</span>
                         </div>
-                        <p style="margin-top: 8px; font-size: 0.9rem; color: #666;">
-                            Get your API key from <a href="https://groq.com" target="_blank">groq.com</a>
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h2>Generate Media</h2>
-                    <div class="form-group">
-                        <label for="media-type">Media Type</label>
-                        <select id="media-type">
-                            <option value="image">Image</option>
-                            <option value="video">Video</option>
-                        </select>
+                        <div class="media-option" data-type="video">
+                            <i>🎥</i>
+                            <span>Generate Video</span>
+                        </div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="prompt">Prompt</label>
-                        <textarea id="prompt" placeholder="Describe what you want to generate..."></textarea>
+                        <label for="prompt">Describe what you want to create</label>
+                        <textarea id="prompt" placeholder="A majestic dragon flying over a medieval castle at sunset..."></textarea>
                     </div>
                     
-                    <div class="form-group" id="image-options">
-                        <label for="image-style">Image Style</label>
-                        <select id="image-style">
-                            <option value="realistic">Realistic</option>
-                            <option value="artistic">Artistic</option>
-                            <option value="cartoon">Cartoon</option>
-                            <option value="abstract">Abstract</option>
-                        </select>
+                    <div id="image-options">
+                        <div class="form-group">
+                            <label for="image-style">Image Style</label>
+                            <select id="image-style">
+                                <option value="realistic">Realistic</option>
+                                <option value="artistic">Artistic</option>
+                                <option value="cartoon">Cartoon</option>
+                                <option value="abstract">Abstract</option>
+                                <option value="fantasy">Fantasy</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="form-group" id="video-options" style="display: none;">
-                        <label for="video-duration">Video Duration (seconds)</label>
-                        <input type="number" id="video-duration" min="1" max="30" value="5">
+                    <div id="video-options" style="display: none;">
+                        <div class="form-group">
+                            <label for="video-duration">Video Duration (seconds)</label>
+                            <input type="range" id="video-duration" min="2" max="10" value="5">
+                            <span id="duration-value">5 seconds</span>
+                        </div>
                     </div>
                     
                     <button id="generate-btn" class="btn btn-full">Generate Media</button>
                     
                     <div class="loading" id="loading">
                         <div class="spinner"></div>
-                        <p>Generating your media... This may take a moment.</p>
+                        <p>Creating your media... This may take a few moments.</p>
                     </div>
                     
-                    <div class="error-message" id="error-message"></div>
-                    <div class="success-message" id="success-message"></div>
+                    <div class="message error" id="error-message"></div>
+                    <div class="message success" id="success-message"></div>
+                </div>
+                
+                <div class="card">
+                    <h2>Prompt Ideas</h2>
+                    <p>Need inspiration? Try these sample prompts:</p>
+                    <div class="prompt-samples">
+                        <div class="sample-prompt">A serene mountain landscape at sunrise with a lake in the foreground</div>
+                        <div class="sample-prompt">A futuristic city with flying cars and neon lights</div>
+                        <div class="sample-prompt">A cute cartoon character exploring a magical forest</div>
+                        <div class="sample-prompt">An abstract representation of artificial intelligence</div>
+                        <div class="sample-prompt">A cyberpunk street market with diverse alien species</div>
+                        <div class="sample-prompt">A majestic whale swimming through clouds in the sky</div>
+                    </div>
                 </div>
                 
                 <div class="card">
@@ -305,24 +401,24 @@
                 <div class="card">
                     <h2>Generated Results</h2>
                     <div id="results-container" class="results-container">
-                        <p style="text-align: center; color: #999; padding: 40px;">
-                            Your generated media will appear here
-                        </p>
+                        <div style="text-align: center; color: #999; padding: 60px 20px;">
+                            <i style="font-size: 48px; margin-bottom: 15px; display: block;">✨</i>
+                            <h3>Your media will appear here</h3>
+                            <p>Enter a description and click "Generate Media" to get started</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>AI Media Generator &copy; 2023 | Powered by Groq API</p>
+            <p>Text to Media Generator &copy; 2023 | Powered by Public AI APIs | No API Key Required</p>
         </footer>
     </div>
 
     <script>
         // DOM Elements
-        const apiKeyInput = document.getElementById('api-key');
-        const toggleKeyBtn = document.getElementById('toggle-key');
-        const mediaTypeSelect = document.getElementById('media-type');
+        const mediaOptions = document.querySelectorAll('.media-option');
         const promptInput = document.getElementById('prompt');
         const imageOptions = document.getElementById('image-options');
         const videoOptions = document.getElementById('video-options');
@@ -332,43 +428,49 @@
         const successMessage = document.getElementById('success-message');
         const resultsContainer = document.getElementById('results-container');
         const historyList = document.getElementById('history-list');
+        const videoDuration = document.getElementById('video-duration');
+        const durationValue = document.getElementById('duration-value');
+        const samplePrompts = document.querySelectorAll('.sample-prompt');
         
-        // Toggle API key visibility
-        toggleKeyBtn.addEventListener('click', function() {
-            if (apiKeyInput.type === 'password') {
-                apiKeyInput.type = 'text';
-                toggleKeyBtn.textContent = 'Hide';
-            } else {
-                apiKeyInput.type = 'password';
-                toggleKeyBtn.textContent = 'Show';
-            }
+        // Current media type (image or video)
+        let currentMediaType = 'image';
+        
+        // Set up media type selection
+        mediaOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                mediaOptions.forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                currentMediaType = this.dataset.type;
+                
+                if (currentMediaType === 'image') {
+                    imageOptions.style.display = 'block';
+                    videoOptions.style.display = 'none';
+                } else {
+                    imageOptions.style.display = 'none';
+                    videoOptions.style.display = 'block';
+                }
+            });
         });
         
-        // Show/hide options based on media type
-        mediaTypeSelect.addEventListener('change', function() {
-            if (this.value === 'image') {
-                imageOptions.style.display = 'block';
-                videoOptions.style.display = 'none';
-            } else {
-                imageOptions.style.display = 'none';
-                videoOptions.style.display = 'block';
-            }
+        // Update duration value display
+        videoDuration.addEventListener('input', function() {
+            durationValue.textContent = `${this.value} seconds`;
+        });
+        
+        // Set up sample prompts
+        samplePrompts.forEach(sample => {
+            sample.addEventListener('click', function() {
+                promptInput.value = this.textContent;
+            });
         });
         
         // Generate media function
         generateBtn.addEventListener('click', async function() {
-            const apiKey = apiKeyInput.value.trim();
             const prompt = promptInput.value.trim();
-            const mediaType = mediaTypeSelect.value;
             
             // Validation
-            if (!apiKey) {
-                showError('Please enter your Groq API key');
-                return;
-            }
-            
             if (!prompt) {
-                showError('Please enter a prompt');
+                showError('Please enter a description of what you want to generate');
                 return;
             }
             
@@ -378,19 +480,17 @@
             hideMessages();
             
             try {
-                // In a real implementation, you would make API calls to Groq here
+                // In a real implementation, you would call public APIs here
                 // For demonstration, we'll simulate API calls with timeouts
                 
-                if (mediaType === 'image') {
-                    // Simulate image generation
+                if (currentMediaType === 'image') {
                     await simulateImageGeneration(prompt);
                 } else {
-                    // Simulate video generation
                     await simulateVideoGeneration(prompt);
                 }
                 
                 // Add to history
-                addToHistory(prompt, mediaType);
+                addToHistory(prompt, currentMediaType);
                 
             } catch (error) {
                 showError('Failed to generate media: ' + error.message);
@@ -400,93 +500,132 @@
             }
         });
         
-        // Simulate image generation (replace with actual Groq API call)
+        // Simulate image generation using a public API (placeholder)
         function simulateImageGeneration(prompt) {
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    // In a real implementation, you would use the Groq API
-                    // For demo purposes, we'll create a placeholder image
-                    const imageUrl = `https://picsum.photos/512/512?random=${Date.now()}`;
+                    // In a real implementation, you would use a public API like:
+                    // - Unsplash Source (for demo purposes)
+                    // - Lorem Picsum (for random images)
+                    // - DALL-E Mini (if available via public endpoint)
+                    
+                    // For this demo, we'll use Lorem Picsum to get a random image
+                    const imageStyle = document.getElementById('image-style').value;
+                    const imageSize = '512';
+                    const imageUrl = `https://picsum.photos/${imageSize}?random=${Date.now()}`;
                     
                     // Display the result
-                    displayImageResult(prompt, imageUrl);
+                    displayImageResult(prompt, imageUrl, imageStyle);
                     showSuccess('Image generated successfully!');
                     resolve();
-                }, 3000);
+                }, 2500);
             });
         }
         
-        // Simulate video generation (replace with actual Groq API call)
+        // Simulate video generation (using a placeholder)
         function simulateVideoGeneration(prompt) {
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    // In a real implementation, you would use the Groq API
-                    // For demo purposes, we'll create a placeholder video
+                    // In a real implementation, you would use a public API
+                    // For demo purposes, we'll use a sample video
+                    const duration = document.getElementById('video-duration').value;
                     const videoUrl = `https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4`;
                     
                     // Display the result
-                    displayVideoResult(prompt, videoUrl);
+                    displayVideoResult(prompt, videoUrl, duration);
                     showSuccess('Video generated successfully!');
                     resolve();
-                }, 5000);
+                }, 4000);
             });
         }
         
         // Display image result
-        function displayImageResult(prompt, imageUrl) {
+        function displayImageResult(prompt, imageUrl, style) {
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
             resultItem.innerHTML = `
-                <h3>Generated Image</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Generated Image</h3>
+                    <span class="tag">${style}</span>
+                </div>
                 <p><strong>Prompt:</strong> ${prompt}</p>
                 <img src="${imageUrl}" alt="Generated image">
-                <div style="margin-top: 15px;">
+                <div class="media-controls">
                     <button class="btn" onclick="downloadMedia('${imageUrl}', 'image')">Download Image</button>
+                    <button class="btn btn-outline" onclick="shareResult('${imageUrl}', '${prompt}')">Share</button>
                 </div>
             `;
-            resultsContainer.innerHTML = '';
+            
+            // Clear previous results and add new one
+            if (resultsContainer.children.length > 0 && 
+                !resultsContainer.children[0].classList.contains('result-item')) {
+                resultsContainer.innerHTML = '';
+            }
             resultsContainer.appendChild(resultItem);
         }
         
         // Display video result
-        function displayVideoResult(prompt, videoUrl) {
+        function displayVideoResult(prompt, videoUrl, duration) {
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
             resultItem.innerHTML = `
-                <h3>Generated Video</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Generated Video</h3>
+                    <span class="tag">${duration}s</span>
+                </div>
                 <p><strong>Prompt:</strong> ${prompt}</p>
-                <video controls>
+                <video controls style="width: 100%; max-width: 600px;">
                     <source src="${videoUrl}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
-                <div style="margin-top: 15px;">
+                <div class="media-controls">
                     <button class="btn" onclick="downloadMedia('${videoUrl}', 'video')">Download Video</button>
+                    <button class="btn btn-outline" onclick="shareResult('${videoUrl}', '${prompt}')">Share</button>
                 </div>
             `;
-            resultsContainer.innerHTML = '';
+            
+            // Clear previous results and add new one
+            if (resultsContainer.children.length > 0 && 
+                !resultsContainer.children[0].classList.contains('result-item')) {
+                resultsContainer.innerHTML = '';
+            }
             resultsContainer.appendChild(resultItem);
         }
         
         // Add to history
         function addToHistory(prompt, mediaType) {
             // Create history item if it's the first one
-            if (historyList.querySelector('p')) {
+            if (historyList.querySelector('p') && historyList.querySelector('p').textContent.includes('No generation history')) {
                 historyList.innerHTML = '';
             }
             
             const historyItem = document.createElement('div');
             historyItem.className = 'history-item';
             historyItem.innerHTML = `
-                <p><strong>${mediaType === 'image' ? '🖼️' : '🎥'} ${mediaType.toUpperCase()}</strong></p>
-                <p>${prompt}</p>
+                <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                    <span style="font-size: 20px; margin-right: 10px;">${mediaType === 'image' ? '🖼️' : '🎥'}</span>
+                    <strong>${mediaType.toUpperCase()}</strong>
+                </div>
+                <p style="margin-bottom: 5px;">${prompt.length > 80 ? prompt.substring(0, 80) + '...' : prompt}</p>
                 <small>${new Date().toLocaleString()}</small>
             `;
             
             // Add click event to reuse prompt
             historyItem.addEventListener('click', function() {
                 promptInput.value = prompt;
-                mediaTypeSelect.value = mediaType;
-                mediaTypeSelect.dispatchEvent(new Event('change'));
+                
+                // Set the correct media type
+                mediaOptions.forEach(opt => opt.classList.remove('active'));
+                document.querySelector(`.media-option[data-type="${mediaType}"]`).classList.add('active');
+                currentMediaType = mediaType;
+                
+                if (mediaType === 'image') {
+                    imageOptions.style.display = 'block';
+                    videoOptions.style.display = 'none';
+                } else {
+                    imageOptions.style.display = 'none';
+                    videoOptions.style.display = 'block';
+                }
             });
             
             historyList.insertBefore(historyItem, historyList.firstChild);
@@ -500,6 +639,21 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+        
+        // Share result function
+        function shareResult(url, prompt) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Check out my AI-generated media!',
+                    text: `I created this using the prompt: "${prompt}"`,
+                    url: url
+                })
+                .catch(err => console.log('Error sharing:', err));
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                showSuccess('Copy the URL to share: ' + url);
+            }
         }
         
         // Utility functions
@@ -519,19 +673,6 @@
             errorMessage.style.display = 'none';
             successMessage.style.display = 'none';
         }
-        
-        // Sample prompts for user convenience
-        const samplePrompts = [
-            "A serene mountain landscape at sunrise with a lake in the foreground",
-            "A futuristic city with flying cars and neon lights",
-            "A cute cartoon character exploring a magical forest",
-            "An abstract representation of artificial intelligence"
-        ];
-        
-        // Add a sample prompt on load for demonstration
-        window.addEventListener('load', function() {
-            promptInput.value = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
-        });
     </script>
 </body>
 </html>

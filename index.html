@@ -3,595 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groq AI Media Generator</title>
+    <title>Groq API Demo</title>
     <style>
-        :root {
-            --primary: #6d28d9;
-            --primary-dark: #5b21b6;
-            --secondary: #f1f5f9;
-            --text: #1e293b;
-            --light: #ffffff;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
-            background-color: var(--secondary);
-            color: var(--text);
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
+            font-family: Arial, sans-serif;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        h1 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-size: 2.5rem;
-        }
-        
-        .subtitle {
-            color: #64748b;
-            font-size: 1.1rem;
-        }
-        
-        .card {
-            background-color: var(--light);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        
-        input, textarea, select {
+        textarea, input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
-        
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .btn {
-            background-color: var(--primary);
+        button {
+            background-color: #007bff;
             color: white;
+            padding: 10px 20px;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
         }
-        
-        .btn:hover {
-            background-color: var(--primary-dark);
+        button:hover {
+            background-color: #0056b3;
         }
-        
-        .btn:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            white-space: pre-wrap;
         }
-        
-        .btn-full {
-            width: 100%;
-        }
-        
-        .api-key-container {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .api-key-container input {
-            flex: 1;
-        }
-        
-        .toggle-key {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #64748b;
-        }
-        
-        .results {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        @media (min-width: 768px) {
-            .results {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        .result-card {
-            background-color: var(--light);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-        
-        .result-image {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-        }
-        
-        .result-video {
-            width: 100%;
-            height: 250px;
-            background-color: #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        
-        .result-content {
-            padding: 1.5rem;
-        }
-        
-        .result-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .result-description {
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-        
         .loading {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-        }
-        
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error {
-            background-color: #fee2e2;
-            color: #dc2626;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .success {
-            background-color: #d1fae5;
-            color: #065f46;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .tabs {
-            display: flex;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #cbd5e1;
-        }
-        
-        .tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            font-weight: 600;
-            color: #64748b;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .history-item {
-            padding: 1rem;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
-        }
-        
-        .history-item:hover {
-            background-color: #f8fafc;
-        }
-        
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        
-        .history-prompt {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        .history-type {
-            font-size: 0.8rem;
-            color: #64748b;
-            text-transform: capitalize;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Groq AI Media Generator</h1>
-            <p class="subtitle">Transform your text into stunning images and videos with AI</p>
-        </header>
+        <h1>Groq API Demo</h1>
         
-        <div class="card">
-            <div class="form-group">
-                <label for="api-key">Groq API Key</label>
-                <div class="api-key-container">
-                    <input type="password" id="api-key" placeholder="Enter your Groq API key">
-                    <button type="button" class="toggle-key" id="toggle-key">Show</button>
-                </div>
-                <small>Your API key is stored locally and never sent to our servers.</small>
-            </div>
-        </div>
+        <label for="apiKey">Groq API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your Groq API key">
         
-        <div class="card">
-            <div class="tabs">
-                <div class="tab active" data-tab="generate">Generate Media</div>
-                <div class="tab" data-tab="history">Generation History</div>
-            </div>
-            
-            <div class="tab-content active" id="generate-tab">
-                <div class="form-group">
-                    <label for="media-type">Media Type</label>
-                    <select id="media-type">
-                        <option value="image">Image</option>
-                        <option value="video">Video</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="prompt">Description</label>
-                    <textarea id="prompt" placeholder="Describe the image or video you want to generate..."></textarea>
-                </div>
-                
-                <div class="form-group" id="image-options">
-                    <label for="image-style">Image Style</label>
-                    <select id="image-style">
-                        <option value="realistic">Realistic</option>
-                        <option value="artistic">Artistic</option>
-                        <option value="abstract">Abstract</option>
-                        <option value="cartoon">Cartoon</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="video-options" style="display: none;">
-                    <label for="video-duration">Video Duration (seconds)</label>
-                    <select id="video-duration">
-                        <option value="5">5 seconds</option>
-                        <option value="10">10 seconds</option>
-                        <option value="15">15 seconds</option>
-                    </select>
-                </div>
-                
-                <button class="btn btn-full" id="generate-btn">Generate Media</button>
-                
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Generating your media... This may take a few moments.</p>
-                </div>
-                
-                <div class="error" id="error-message"></div>
-                <div class="success" id="success-message"></div>
-            </div>
-            
-            <div class="tab-content" id="history-tab">
-                <div id="history-list">
-                    <!-- History items will be added here dynamically -->
-                </div>
-            </div>
-        </div>
+        <label for="prompt">Enter your prompt:</label>
+        <textarea id="prompt" rows="4" placeholder="Explain the importance of fast language models">Explain the importance of fast language models</textarea>
         
-        <div class="results" id="results-container">
-            <!-- Generated media will be displayed here -->
-        </div>
+        <button onclick="getResponse()">Get Response</button>
+        
+        <div id="response"></div>
     </div>
 
     <script>
-        // DOM Elements
-        const apiKeyInput = document.getElementById('api-key');
-        const toggleKeyBtn = document.getElementById('toggle-key');
-        const mediaTypeSelect = document.getElementById('media-type');
-        const promptTextarea = document.getElementById('prompt');
-        const imageOptions = document.getElementById('image-options');
-        const videoOptions = document.getElementById('video-options');
-        const generateBtn = document.getElementById('generate-btn');
-        const loadingDiv = document.getElementById('loading');
-        const errorDiv = document.getElementById('error-message');
-        const successDiv = document.getElementById('success-message');
-        const resultsContainer = document.getElementById('results-container');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const historyList = document.getElementById('history-list');
-
-        // Toggle API key visibility
-        toggleKeyBtn.addEventListener('click', () => {
-            if (apiKeyInput.type === 'password') {
-                apiKeyInput.type = 'text';
-                toggleKeyBtn.textContent = 'Hide';
-            } else {
-                apiKeyInput.type = 'password';
-                toggleKeyBtn.textContent = 'Show';
-            }
-        });
-
-        // Show/hide options based on media type
-        mediaTypeSelect.addEventListener('change', () => {
-            if (mediaTypeSelect.value === 'image') {
-                imageOptions.style.display = 'block';
-                videoOptions.style.display = 'none';
-            } else {
-                imageOptions.style.display = 'none';
-                videoOptions.style.display = 'block';
-            }
-        });
-
-        // Tab switching
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show corresponding content
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === `${tabId}-tab`) {
-                        content.classList.add('active');
-                    }
-                });
-                
-                // Load history if needed
-                if (tabId === 'history') {
-                    loadHistory();
-                }
-            });
-        });
-
-        // Generate media
-        generateBtn.addEventListener('click', async () => {
-            const apiKey = apiKeyInput.value.trim();
-            const prompt = promptTextarea.value.trim();
-            const mediaType = mediaTypeSelect.value;
+        async function getResponse() {
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            const responseDiv = document.getElementById('response');
             
-            // Validation
             if (!apiKey) {
-                showError('Please enter your Groq API key');
+                responseDiv.innerHTML = 'Please enter your Groq API key';
                 return;
             }
             
-            if (!prompt) {
-                showError('Please enter a description for your media');
-                return;
-            }
-            
-            // Show loading state
-            loadingDiv.style.display = 'block';
-            generateBtn.disabled = true;
-            hideMessages();
+            responseDiv.innerHTML = '<div class="loading">Loading...</div>';
             
             try {
-                // In a real implementation, this would call the Groq API
-                // For demonstration, we'll simulate the API call
-                const result = await simulateGroqAPICall(apiKey, prompt, mediaType);
-                
-                // Display result
-                displayResult(result, prompt, mediaType);
-                
-                // Save to history
-                saveToHistory(prompt, mediaType, result);
-                
-                showSuccess(`${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)} generated successfully!`);
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                loadingDiv.style.display = 'none';
-                generateBtn.disabled = false;
-            }
-        });
-
-        // Simulate Groq API call (replace with actual API integration)
-        function simulateGroqAPICall(apiKey, prompt, mediaType) {
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // Simulate API validation
-                    if (!apiKey.startsWith('gsk_')) {
-                        reject(new Error('Invalid API key format. Groq API keys typically start with "gsk_".'));
-                        return;
-                    }
-                    
-                    // Simulate successful response
-                    const result = {
-                        id: Date.now().toString(),
-                        url: mediaType === 'image' 
-                            ? `https://picsum.photos/600/400?random=${Date.now()}`
-                            : null, // Video URLs would be provided by the actual API
-                        prompt: prompt,
-                        mediaType: mediaType,
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    resolve(result);
-                }, 3000); // Simulate API processing time
-            });
-        }
-
-        // Display generated media
-        function displayResult(result, prompt, mediaType) {
-            const resultElement = document.createElement('div');
-            resultElement.className = 'result-card';
-            
-            if (mediaType === 'image') {
-                resultElement.innerHTML = `
-                    <img src="${result.url}" alt="${prompt}" class="result-image">
-                    <div class="result-content">
-                        <div class="result-title">Generated Image</div>
-                        <div class="result-description">${prompt}</div>
-                    </div>
-                `;
-            } else {
-                resultElement.innerHTML = `
-                    <div class="result-video">
-                        <div>Video Generation Simulation</div>
-                    </div>
-                    <div class="result-content">
-                        <div class="result-title">Generated Video</div>
-                        <div class="result-description">${prompt}</div>
-                    </div>
-                `;
-            }
-            
-            resultsContainer.prepend(resultElement);
-        }
-
-        // Save generation to history
-        function saveToHistory(prompt, mediaType, result) {
-            const history = getHistory();
-            history.unshift({
-                prompt,
-                mediaType,
-                timestamp: new Date().toISOString(),
-                resultId: result.id
-            });
-            
-            // Keep only the last 10 items
-            if (history.length > 10) {
-                history.pop();
-            }
-            
-            localStorage.setItem('groqMediaHistory', JSON.stringify(history));
-        }
-
-        // Load generation history
-        function loadHistory() {
-            const history = getHistory();
-            historyList.innerHTML = '';
-            
-            if (history.length === 0) {
-                historyList.innerHTML = '<div class="history-item">No generation history yet.</div>';
-                return;
-            }
-            
-            history.forEach(item => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'history-item';
-                historyItem.innerHTML = `
-                    <div class="history-prompt">${item.prompt}</div>
-                    <div class="history-type">${item.mediaType} • ${new Date(item.timestamp).toLocaleString()}</div>
-                `;
-                
-                historyItem.addEventListener('click', () => {
-                    promptTextarea.value = item.prompt;
-                    mediaTypeSelect.value = item.mediaType;
-                    
-                    // Switch to generate tab
-                    tabs.forEach(t => t.classList.remove('active'));
-                    document.querySelector('[data-tab="generate"]').classList.add('active');
-                    
-                    tabContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === 'generate-tab') {
-                            content.classList.add('active');
-                        }
-                    });
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1024
+                    })
                 });
                 
-                historyList.appendChild(historyItem);
-            });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                responseDiv.innerHTML = data.choices[0].message.content;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                responseDiv.innerHTML = `Error: ${error.message}`;
+            }
         }
-
-        // Get history from localStorage
-        function getHistory() {
-            const historyJson = localStorage.getItem('groqMediaHistory');
-            return historyJson ? JSON.parse(historyJson) : [];
-        }
-
-        // Utility functions
-        function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            successDiv.style.display = 'none';
-        }
-
-        function showSuccess(message) {
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-        }
-
-        function hideMessages() {
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-        }
-
-        // Initialize
-        loadHistory();
     </script>
 </body>
 </html>
